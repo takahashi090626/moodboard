@@ -91,7 +91,6 @@ function Header() {
             <NavItem to="/explore">探索</NavItem>
             <NavItem to="/notifications">お知らせ</NavItem>
             <Link to="/profile">
-              <UserAvatar src={user.avatarUrl || '/default-avatar.png'} alt="User Avatar" />
             </Link>
             <LogoutButton onClick={handleLogout}>ログアウト</LogoutButton>
           </>

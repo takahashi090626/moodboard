@@ -103,8 +103,8 @@ export const EmotionIcon = styled.span`
 `;
 
 export const Button = styled.button`
-  background-color: #e94560;
-  color: white;
+  background-color: #fff;
+  color: black;
   border: none;
   padding: 8px 16px;
   border-radius: 20px;

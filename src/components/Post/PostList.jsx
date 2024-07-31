@@ -29,6 +29,7 @@ import {
   Button,
   LikeCount
 } from '../../styles/StyledComponents';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
 function PostList() {
   const [posts, setPosts] = useState([]);
@@ -121,12 +122,16 @@ function PostList() {
                 <Button onClick={() => handleDelete(post.id)}>Delete</Button>
               </>
             )}
-            <Button onClick={() => handleLike(post.id, post.isLiked, post.likeCount)}>
-              {post.isLiked ? 'Unlike' : 'Like'}
+            <Button onClick={() => handleLike(post.id, post.isLiked)}>
+              {post.isLiked ? (
+                <FaHeart color="red" size="1.5em" />
+              ) : (
+                <FaRegHeart color="gray" size="1.5em" />
+              )}
             </Button>
             <LikeCount>{post.likeCount} likes</LikeCount>
             <Link to={`/post/${post.id}`}>
-              <Button>Comments ({post.commentCount})</Button>
+              <Button>💬  ({post.commentCount})</Button>
             </Link>
           </PostFooter>
         </PostContainer>
@@ -134,6 +139,5 @@ function PostList() {
     </div>
   );
 }
-
 
 export default PostList;
