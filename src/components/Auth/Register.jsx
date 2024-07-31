@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { AuthContainer, AuthTitle, AuthForm, AuthInput, AuthButton, AuthLink } from '../../styles/AuthStyles';
 
@@ -12,10 +12,25 @@ function Register() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const isUserIdUnique = async (userId) => {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.empty;
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+
     try {
+      // Check if userId is unique
+      const isUnique = await isUserIdUnique(userId);
+      if (!isUnique) {
+        setError('このユーザーIDは既に使用されています。別のIDを選択してください。');
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         email,
@@ -23,8 +38,12 @@ function Register() {
       });
       navigate('/login');
     } catch (error) {
-      setError('登録に失敗しました。もう一度お試しください。');
-      console.error('Error registering user:', error);
+      if (error.code === 'auth/email-already-in-use') {
+        setError('このメールアドレスは既に使用されています。');
+      } else {
+        setError('登録に失敗しました。もう一度お試しください。');
+        console.error('Error registering user:', error);
+      }
     }
   };
 

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
+import { useAuth } from '../../contexts/AuthContext';
 import { AuthContainer, AuthTitle, AuthForm, AuthInput, AuthButton, AuthLink } from '../../styles/AuthStyles';
 
 function Login() {
@@ -10,12 +11,18 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      // Find user by userId
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('userId', '==', userId));
       const querySnapshot = await getDocs(q);
@@ -28,12 +35,11 @@ function Login() {
       const userDoc = querySnapshot.docs[0];
       const userEmail = userDoc.data().email;
 
-      // Sign in with email and password
       await signInWithEmailAndPassword(auth, userEmail, password);
-      navigate('/');
+      console.log('Login successful, navigating to home');
     } catch (error) {
-      setError('ログインに失敗しました。もう一度お試しください。');
       console.error('Error logging in:', error);
+      setError('ログインに失敗しました。ユーザーIDとパスワードを確認してください。');
     }
   };
 
