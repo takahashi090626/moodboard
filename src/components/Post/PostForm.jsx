@@ -1,83 +1,116 @@
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, Textarea } from '../../styles/StyledComponents';
-import EmotionRippleEffect from '../EmotionRipple';
-import { predictEmotion, recommendContent } from '../../services/aiHelper';
+import { Button } from '../../styles/StyledComponents';
+
+const PostFormWrapper = styled.div`
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const PostInput = styled.textarea`
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 1.1em;
+  resize: vertical;
+  min-height: 100px;
+  margin-bottom: 15px;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #e94560;
+  }
+`;
+
+const MoodSelector = styled.div`
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+`;
+
+const MoodIcon = styled.span`
+  font-size: 2em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: ${props => props.selected ? 1 : 0.5};
+  transform: ${props => props.selected ? 'scale(1.2)' : 'scale(1)'};
+  
+  &:hover {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+`;
+
+const PostButton = styled(Button)`
+  float: right;
+`;
 
 function PostForm() {
   const [content, setContent] = useState('');
   const [emotion, setEmotion] = useState('');
-  const [showRipple, setShowRipple] = useState(false);
-  const [recommendation, setRecommendation] = useState('');
   const { user } = useAuth();
 
-  const emotions = ['😊', '😢', '😠', '😎', '🤔'];
-
-  useEffect(() => {
-    if (content) {
-      const predictedEmotion = predictEmotion(content);
-      setEmotion(predictedEmotion);
-    }
-  }, [content]);
-
-  const getUserPosts = async (userId) => {
-    const q = query(collection(db, 'posts'), where('userId', '==', userId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data());
-  };
+  const emotions = [
+    { emoji: '😊', name: '幸福' },
+    { emoji: '😠', name: '怒り' },
+    { emoji: '😲', name: '驚き' },
+    { emoji: '😨', name: '恐怖' },
+    { emoji: '❤️', name: '愛' },
+    { emoji: '🤔', name: '考える' }
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || !emotion) return;
 
     try {
       await addDoc(collection(db, 'posts'), {
         content,
         emotion,
         userId: user.uid,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        likeCount: 0,
+        commentCount: 0
       });
       setContent('');
       setEmotion('');
-      setShowRipple(true);
-      setTimeout(() => setShowRipple(false), 1000);
-
-      // Get content recommendation
-      const userPosts = await getUserPosts(user.uid);
-      const newRecommendation = recommendContent(userPosts);
-      setRecommendation(newRecommendation);
     } catch (error) {
       console.error('Error adding post: ', error);
     }
   };
 
   return (
-    <div>
+    <PostFormWrapper>
       <form onSubmit={handleSubmit}>
-        <Textarea
+        <PostInput
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="What's on your mind?"
+          placeholder="今の気分は？"
         />
-        <div>
-          {emotions.map((emoji) => (
-            <Button
+        <MoodSelector>
+          {emotions.map(({ emoji, name }) => (
+            <MoodIcon
               key={emoji}
-              type="button"
               onClick={() => setEmotion(emoji)}
-              style={{ backgroundColor: emotion === emoji ? '#ddd' : 'transparent' }}
+              selected={emotion === emoji}
+              title={name}
             >
               {emoji}
-            </Button>
+            </MoodIcon>
           ))}
-        </div>
-        <Button type="submit">Post</Button>
+        </MoodSelector>
+        <PostButton type="submit">投稿</PostButton>
       </form>
-      {showRipple && <EmotionRippleEffect emotion={emotion} />}
-      {recommendation && <p>{recommendation}</p>}
-    </div>
+    </PostFormWrapper>
   );
 }
 

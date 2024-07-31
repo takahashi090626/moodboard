@@ -1,12 +1,32 @@
-import styled, { createGlobalStyle, keyframes } from 'styled-components';
-import { animated } from '@react-spring/web';
+import styled, { createGlobalStyle } from 'styled-components';
 
 export const GlobalStyle = createGlobalStyle`
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5;
+    font-family: 'Poppins', sans-serif;
+    background-color: #1a1a2e;
+    color: #fff;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
+  }
+
+  .mood-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(45deg, #16213e, #0f3460, #533483);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    opacity: 0.7;
+    z-index: -1;
+  }
+
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 `;
 
@@ -16,129 +36,116 @@ export const AppContainer = styled.div`
   padding: 20px;
 `;
 
-export const Header = styled.header`
-  background-color: #ffffff;
-  padding: 10px 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-`;
-
-export const Avatar = styled.img`
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
-`;
-
 export const PostContainer = styled.div`
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background-color: ${props => {
+    switch (props.emotion) {
+      case '😊': return 'rgba(255, 193, 7, 0.3)';  // 幸福: 黄色
+      case '😠': return 'rgba(244, 67, 54, 0.3)';  // 怒り: 赤
+      case '😲': return 'rgba(33, 150, 243, 0.3)'; // 驚き: 青
+      case '😨': return 'rgba(156, 39, 176, 0.3)'; // 恐怖: 紫
+      case '❤️': return 'rgba(233, 30, 99, 0.3)';  // 愛: ピンク
+      case '🤔': return 'rgba(76, 175, 80, 0.3)';  // 考える: 緑
+      default: return 'rgba(255, 255, 255, 0.1)';  // デフォルト: 白
+    }
+  }};
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
 `;
 
 export const PostHeader = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+`;
+
+export const Avatar = styled.img`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+`;
+
+export const UserName = styled.span`
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-right: 10px;
+`;
+
+export const TimeStamp = styled.span`
+  color: #bbb;
+  font-size: 0.9em;
 `;
 
 export const PostContent = styled.p`
-  font-size: 16px;
-  line-height: 1.4;
-  margin-bottom: 10px;
+  font-size: 1.1em;
+  line-height: 1.5;
+  margin-bottom: 15px;
 `;
 
 export const PostFooter = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
-  color: #65676b;
 `;
 
-const ripple = keyframes`
-  0% {
-    transform: scale(0);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(4);
-    opacity: 0;
-  }
-`;
-
-export const EmotionRipple = styled(animated.div)`
-  position: absolute;
-  border-radius: 50%;
-  background-color: ${props => props.color};
-  animation: ${ripple} 1s ease-out;
+export const EmotionIcon = styled.span`
+  font-size: 1.5em;
+  margin-right: 10px;
 `;
 
 export const Button = styled.button`
-  background-color: #1877f2;
+  background-color: #e94560;
   color: white;
   border: none;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 20px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.9em;
   font-weight: 600;
+  transition: all 0.3s ease;
+
   &:hover {
-    background-color: #166fe5;
+    background-color: #d63447;
+    transform: translateY(-2px);
   }
+`;
+
+export const LikeCount = styled.span`
+  margin-left: 5px;
+  font-size: 0.9em;
+  color: #bbb;
 `;
 
 export const Input = styled.input`
   width: 100%;
   padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-`;
+  margin-bottom: 15px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1em;
 
-export const Textarea = styled.textarea`
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  resize: vertical;
-  font-size: 16px;
-  min-height: 100px;
-`;
-
-export const UserName = styled.span`
-  font-weight: 600;
-  margin-left: 10px;
-`;
-
-export const TimeStamp = styled.span`
-  color: #65676b;
-  font-size: 12px;
-`;
-
-export const EmotionIcon = styled.span`
-  font-size: 20px;
-  margin-right: 5px;
-`;
-
-export const LikeCount = styled.span`
-  font-size: 14px;
-  color: #65676b;
-  margin-left: 5px;
+  &:focus {
+    outline: none;
+    border-color: #e94560;
+  }
 `;
 
 export const CommentContainer = styled.div`
-  background-color: #f0f2f5;
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 15px;
 `;
+
+// Add other styled components as needed

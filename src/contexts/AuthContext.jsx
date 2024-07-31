@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, db } from '../services/firebase';
+import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -16,13 +16,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser({ ...firebaseUser, ...userDoc.data() });
-        } else {
-          setUser(firebaseUser);
-        }
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        setUser({ ...firebaseUser, ...userDoc.data() });
       } else {
         setUser(null);
       }
@@ -32,18 +27,9 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  const updateUserProfile = async (profileData) => {
-    if (user) {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, profileData, { merge: true });
-      setUser((prevUser) => ({ ...prevUser, ...profileData }));
-    }
-  };
-
   const value = {
     user,
-    loading,
-    updateUserProfile
+    loading
   };
 
   return (

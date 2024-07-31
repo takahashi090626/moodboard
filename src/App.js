@@ -9,7 +9,7 @@ import Explore from './pages/Explore';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import PostDetail from './components/Post/PostDetail';
-import { useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function App() {
   const { user, loading } = useAuth();
@@ -39,4 +39,12 @@ function App() {
   );
 }
 
-export default App;
+function AppWrapper() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
+
+export default AppWrapper;

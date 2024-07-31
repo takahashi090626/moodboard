@@ -15,7 +15,7 @@ import {
   increment,
   Timestamp
 } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   PostContainer,
@@ -104,7 +104,7 @@ function PostList() {
   return (
     <div>
       {posts.map((post) => (
-        <PostContainer key={post.id}>
+        <PostContainer key={post.id} emotion={post.emotion}>
           <PostHeader>
             <Avatar src={post.userAvatar || '/default-avatar.png'} alt="User avatar" />
             <UserName>{post.userId}</UserName>
@@ -121,7 +121,7 @@ function PostList() {
                 <Button onClick={() => handleDelete(post.id)}>Delete</Button>
               </>
             )}
-            <Button onClick={() => handleLike(post.id, post.isLiked)}>
+            <Button onClick={() => handleLike(post.id, post.isLiked, post.likeCount)}>
               {post.isLiked ? 'Unlike' : 'Like'}
             </Button>
             <LikeCount>{post.likeCount} likes</LikeCount>
@@ -134,5 +134,6 @@ function PostList() {
     </div>
   );
 }
+
 
 export default PostList;

@@ -10,7 +10,7 @@ import {
   orderBy, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   PostContainer, 
