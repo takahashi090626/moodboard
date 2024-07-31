@@ -1,55 +1,20 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
-import styled from 'styled-components';
+import { AuthContainer, AuthTitle, AuthForm, AuthInput, AuthButton, AuthLink } from '../../styles/AuthStyles';
 
-const FormWrapper = styled.div`
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 2rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  backdrop-filter: blur(4px);
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.8rem;
-  margin-bottom: 1rem;
-  border: none;
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
-`;
-
-const Button = styled.button`
-  width: 100%;
-  padding: 0.8rem;
-  border: none;
-  border-radius: 5px;
-  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  }
-`;
-
-const Register = () => {
+function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userId, setUserId] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError('');
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, 'users', userCredential.user.uid), {
@@ -58,38 +23,44 @@ const Register = () => {
       });
       navigate('/login');
     } catch (error) {
+      setError('登録に失敗しました。もう一度お試しください。');
       console.error('Error registering user:', error);
     }
   };
 
   return (
-    <FormWrapper>
-      <form onSubmit={handleRegister}>
-        <Input
+    <AuthContainer>
+      <AuthTitle>新規登録</AuthTitle>
+      <AuthForm onSubmit={handleRegister}>
+        <AuthInput
           type="email"
           placeholder="メールアドレス"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <Input
+        <AuthInput
           type="text"
           placeholder="ユーザーID"
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
           required
         />
-        <Input
+        <AuthInput
           type="password"
           placeholder="パスワード"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <Button type="submit">登録</Button>
-      </form>
-    </FormWrapper>
+        <AuthButton type="submit">登録</AuthButton>
+      </AuthForm>
+      {error && <p style={{ color: 'red', textAlign: 'center', marginTop: '10px' }}>{error}</p>}
+      <AuthLink>
+        既にアカウントをお持ちの方は <Link to="/login">こちら</Link> からログイン
+      </AuthLink>
+    </AuthContainer>
   );
-};
+}
 
 export default Register;

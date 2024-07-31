@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase';
 
 const HeaderWrapper = styled.header`
   background-color: rgba(0, 0, 0, 0.5);
@@ -15,17 +17,19 @@ const HeaderWrapper = styled.header`
   z-index: 100;
 `;
 
-const Logo = styled.div`
+const Logo = styled(Link)`
   font-size: 1.5rem;
   font-weight: 600;
   background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  text-decoration: none;
 `;
 
 const NavMenu = styled.nav`
   display: flex;
   gap: 1rem;
+  align-items: center;
 `;
 
 const NavItem = styled(Link)`
@@ -48,24 +52,59 @@ const UserAvatar = styled.img`
   cursor: pointer;
 `;
 
-const Header = () => {
+const LogoutButton = styled.button`
+  background-color: #e94560;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #d63447;
+    transform: translateY(-2px);
+  }
+`;
+
+function Header() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <HeaderWrapper>
-      <Logo>MoodBoard 2.0</Logo>
+      <Logo to="/">MoodBoard 2.0</Logo>
       <NavMenu>
-        <NavItem to="/">ホーム</NavItem>
-        <NavItem to="/explore">探索</NavItem>
-        <NavItem to="/notifications">お知らせ</NavItem>
         {user && (
-          <Link to="/profile">
-            <UserAvatar src={user.avatarUrl || '/default-avatar.png'} alt="User Avatar" />
-          </Link>
+          <>
+            <NavItem to="/">ホーム</NavItem>
+            <NavItem to="/explore">探索</NavItem>
+            <NavItem to="/notifications">お知らせ</NavItem>
+            <Link to="/profile">
+              <UserAvatar src={user.avatarUrl || '/default-avatar.png'} alt="User Avatar" />
+            </Link>
+            <LogoutButton onClick={handleLogout}>ログアウト</LogoutButton>
+          </>
+        )}
+        {!user && (
+          <>
+            <NavItem to="/login">ログイン</NavItem>
+            <NavItem to="/register">新規登録</NavItem>
+          </>
         )}
       </NavMenu>
     </HeaderWrapper>
   );
-};
+}
 
 export default Header;
