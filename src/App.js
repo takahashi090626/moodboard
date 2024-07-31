@@ -4,6 +4,7 @@ import { GlobalStyle, AppContainer } from './styles/StyledComponents';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import Home from './pages/Home';
+import Notification from './pages/Notifications';
 import Profile from './pages/Profile';
 import Explore from './pages/Explore';
 import Login from './components/Auth/Login';
@@ -28,6 +29,8 @@ function App() {
             <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
             <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
             <Route path="/explore" element={user ? <Explore /> : <Navigate to="/login" />} />
+            <Route path="/notification" element={user ? <Notification /> : <Navigate to="/login" />} />
+
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/post/:postId" element={user ? <PostDetail /> : <Navigate to="/login" />} />
