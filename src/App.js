@@ -1,24 +1,41 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GlobalStyle, AppContainer } from './styles/StyledComponents';
+import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+import Explore from './pages/Explore';
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
+import PostDetail from './components/Post/PostDetail';
+import { useAuth } from './contexts/AuthContext';
 
 function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <GlobalStyle />
+      <AppContainer>
+        <Header />
+        <main>
+          <Routes>
+            <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
+            <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+            <Route path="/explore" element={user ? <Explore /> : <Navigate to="/login" />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/post/:postId" element={user ? <PostDetail /> : <Navigate to="/login" />} />
+          </Routes>
+        </main>
+        <Footer />
+      </AppContainer>
+    </Router>
   );
 }
 
