@@ -42,6 +42,8 @@ const UserLink = styled.span`
   }
 `;
 
+
+
 function PostList({ posts: initialPosts, onUserClick }) {
     const [posts, setPosts] = useState(initialPosts || []);
     const { user } = useAuth();
@@ -72,7 +74,7 @@ function PostList({ posts: initialPosts, onUserClick }) {
       postsData.forEach((post, index) => {
         const userData = userDocs[index].data();
         post.userAvatar = userData?.avatarURL || '';
-        post.userId = userData?.userId || 'Anonymous';
+        post.user_id = userData?.userId || post.userId || 'Anonymous';
         post.isLiked = likeDocs[index].exists();
         post.likeCount = post.likeCount || 0;
         post.commentCount = commentDocs[index].size;
@@ -122,6 +124,7 @@ function PostList({ posts: initialPosts, onUserClick }) {
     }
   };
 
+  
   return (
     <div>
       {posts.map((post) => (
@@ -129,7 +132,7 @@ function PostList({ posts: initialPosts, onUserClick }) {
           <PostHeader>
             <Avatar src={post.userAvatar || '/default-avatar.png'} alt="User avatar" />
             <UserLink onClick={() => handleUserClick(post.userId)}>
-              {post.userId}
+              {post.user_id}
             </UserLink>
             <TimeStamp>{formatDate(post.createdAt)}</TimeStamp>
           </PostHeader>
