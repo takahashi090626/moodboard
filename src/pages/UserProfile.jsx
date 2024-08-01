@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfileContainer, ProfileHeader, Avatar, ProfileContent, Button } from '../styles/StyledComponents';
@@ -8,36 +8,19 @@ import PostList from '../components/Post/PostList';
 
 function UserProfile() {
   const { userId } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
-  const [friendStatus, setFriendStatus] = useState('none'); // 'none', 'pending', 'friends'
+  const [friendStatus, setFriendStatus] = useState('none');
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (userId) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', userId));
-          if (userDoc.exists()) {
-            setProfile({ id: userDoc.id, ...userDoc.data() });
-          } else {
-            console.log('User not found');
-            navigate('/404');
-          }
-          // ここでポストの取得ロジックを実装
-          // フレンドステータスの確認ロジックを実装
-          await checkFriendStatus();
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      }
-    };
+  const fetchUserPosts = useCallback(async () => {
+    const postsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
+    const querySnapshot = await getDocs(postsQuery);
+    const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setPosts(userPosts);
+  }, [userId]);
 
-    fetchUserData();
-  }, [userId, user.uid]);
-
-  const checkFriendStatus = async () => {
+  const checkFriendStatus = useCallback(async () => {
     if (user.uid === userId) {
       setFriendStatus('self');
       return;
@@ -48,16 +31,40 @@ function UserProfile() {
     } else {
       setFriendStatus('none');
     }
-  };
+  }, [user.uid, userId]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (userId) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', userId));
+          if (userDoc.exists()) {
+            setProfile({ id: userDoc.id, ...userDoc.data() });
+          } else {
+            console.log('User not found');
+            // ここでエラー処理やリダイレクトを行うことができます
+          }
+          
+          await fetchUserPosts();
+          await checkFriendStatus();
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [userId, fetchUserPosts, checkFriendStatus]);
 
   const handleFriendRequest = async () => {
     if (friendStatus === 'none') {
-      await setDoc(doc(db, 'friendRequests', `${user.uid}_${userId}`), {
+      const requestData = {
         sender: user.uid,
         receiver: userId,
         status: 'pending',
         timestamp: new Date()
-      });
+      };
+      await setDoc(doc(db, 'friendRequests', `${user.uid}_${userId}`), requestData);
       setFriendStatus('pending');
     } else if (friendStatus === 'pending') {
       await deleteDoc(doc(db, 'friendRequests', `${user.uid}_${userId}`));
@@ -73,21 +80,26 @@ function UserProfile() {
     <ProfileContainer>
       <ProfileHeader>
         <Avatar src={profile.avatarURL || '/default-avatar.png'} alt="User avatar" />
-        <h2>{profile.user_id}</h2>
+        <h2>{profile.userId}</h2>
       </ProfileHeader>
       <ProfileContent>
-        {friendStatus === 'none' && (
-          <Button onClick={handleFriendRequest}>Send Friend Request</Button>
+        {user.uid !== userId && (
+          <>
+            {friendStatus === 'none' && (
+              <Button onClick={handleFriendRequest}>Send Friend Request</Button>
+            )}
+            {friendStatus === 'pending' && (
+              <Button onClick={handleFriendRequest}>Cancel Friend Request</Button>
+            )}
+            {friendStatus === 'friends' && (
+              <Button disabled>Friends</Button>
+            )}
+          </>
         )}
-        {friendStatus === 'pending' && (
-          <Button onClick={handleFriendRequest}>Cancel Friend Request</Button>
-        )}
-        {friendStatus === 'friends' && (
-          <Button disabled>Friends</Button>
-        )}
-        {/* その他のプロフィール情報 */}
+        {/* その他のプロフィール情報をここに追加 */}
       </ProfileContent>
-      <PostList posts={posts} onUserClick={(id) => navigate(`/profile/${id}`)} />
+      <h3>User Posts</h3>
+      <PostList posts={posts} />
     </ProfileContainer>
   );
 }

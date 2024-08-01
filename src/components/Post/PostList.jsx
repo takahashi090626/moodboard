@@ -120,10 +120,9 @@ function PostList({ posts: initialPosts, onUserClick }) {
     if (onUserClick) {
       onUserClick(userId);
     } else {
-      navigate(`/profile/${userId}`);
+      navigate(`/user-profile/${userId}`);  // この行を変更
     }
   };
-
   
   return (
     <div>

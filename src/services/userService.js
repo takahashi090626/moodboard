@@ -1,5 +1,8 @@
 import { db } from '../firebase';
-import { doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
+
+
+
 
 export const getUserProfile = async (userId) => {
   if (!userId) throw new Error('userId is required');
@@ -32,7 +35,6 @@ export const sendFriendRequest = async (senderId, receiverId) => {
 
 export const checkFriendshipStatus = async (userId1, userId2) => {
   const user1Doc = await getDoc(doc(db, 'users', userId1));
-  const user2Doc = await getDoc(doc(db, 'users', userId2));
 
   if (user1Doc.data().friends && user1Doc.data().friends.includes(userId2)) {
     return 'friends';
@@ -40,8 +42,8 @@ export const checkFriendshipStatus = async (userId1, userId2) => {
 
   const requestQuery = query(
     collection(db, 'friendRequests'),
-    where('senderId', 'in', [userId1, userId2]),
-    where('receiverId', 'in', [userId1, userId2]),
+    where('sender', 'in', [userId1, userId2]),
+    where('receiver', 'in', [userId1, userId2]),
     where('status', '==', 'pending')
   );
 
@@ -52,7 +54,7 @@ export const checkFriendshipStatus = async (userId1, userId2) => {
 export const getFriendRequests = async (userId) => {
   const requestsQuery = query(
     collection(db, 'friendRequests'),
-    where('receiverId', '==', userId),
+    where('receiver', '==', userId),
     where('status', '==', 'pending')
   );
   const querySnapshot = await getDocs(requestsQuery);
@@ -60,11 +62,17 @@ export const getFriendRequests = async (userId) => {
 };
 
 export const acceptFriendRequest = async (requestId, userId, friendId) => {
-  await updateDoc(doc(db, 'friendRequests', requestId), { status: 'accepted' });
-  await updateDoc(doc(db, 'users', userId), { friends: arrayUnion(friendId) });
-  await updateDoc(doc(db, 'users', friendId), { friends: arrayUnion(userId) });
+  const requestRef = doc(db, 'friendRequests', requestId);
+  const userRef = doc(db, 'users', userId);
+  const friendRef = doc(db, 'users', friendId);
+
+  await updateDoc(requestRef, { status: 'accepted' });
+  await updateDoc(userRef, { friends: arrayUnion(friendId) });
+  await updateDoc(friendRef, { friends: arrayUnion(userId) });
 };
 
 export const rejectFriendRequest = async (requestId) => {
-  await updateDoc(doc(db, 'friendRequests', requestId), { status: 'rejected' });
+  await deleteDoc(doc(db, 'friendRequests', requestId));
 };
+
+

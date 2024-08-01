@@ -41,15 +41,15 @@ function NotificationBox() {
 
   return (
     <NotificationContainer>
-      <h3>Friend Requests</h3>
+      <h3>フレンドリクエスト</h3>
       {friendRequests.length === 0 ? (
-        <p>No new friend requests</p>
+        <p>新しいフレンドリクエストはありません</p>
       ) : (
         friendRequests.map(request => (
           <NotificationItem key={request.id}>
-            <p>{request.senderId} wants to be your friend</p>
-            <Button onClick={() => handleAccept(request.id, request.senderId)}>Accept</Button>
-            <Button onClick={() => handleReject(request.id)}>Reject</Button>
+            <p>{request.sender} があなたをフレンドに追加したいようです</p>
+            <Button onClick={() => handleAccept(request.id, request.sender)}>承認</Button>
+            <Button onClick={() => handleReject(request.id)}>拒否</Button>
           </NotificationItem>
         ))
       )}

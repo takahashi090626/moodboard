@@ -4,6 +4,7 @@ import PostList from '../components/Post/PostList';
 import styled from 'styled-components';
 import NotificationBox from '../components/NotificationBox';
 
+
 const HomeContainer = styled.div`
   max-width: 600px;
   margin: 0 auto;
@@ -11,9 +12,10 @@ const HomeContainer = styled.div`
 `;
 
 function Home() {
+   
   return (
     <div className="home">
-           <NotificationBox />
+     <NotificationBox />
 
       <PostForm />
       <PostList />

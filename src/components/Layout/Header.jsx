@@ -89,6 +89,8 @@ function Header() {
           <>
             <NavItem to="/">ホーム</NavItem>
             <NavItem to="/search">検索</NavItem>
+            
+            <NavItem to="/friends">フレンド一覧</NavItem>
             <NavItem to="/notification">お知らせ</NavItem>
             <Link to="/profile">
               <UserAvatar src={user.avatarUrl || '/default-avatar.png'}  />
