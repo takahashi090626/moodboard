@@ -1,43 +1,82 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { ProfileContainer, ProfileHeader, Avatar, ProfileContent } from '../styles/StyledComponents';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { auth, db, storage } from '../firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 function Profile() {
-  const { userId } = useParams();
-  const [profileData, setProfileData] = useState(null);
+  const { user, updateUserProfile } = useAuth();
+  const [userId, setUserId] = useState('');
+  const [avatar, setAvatar] = useState(null);
+  const [avatarURL, setAvatarURL] = useState('');
+
+  const fetchUserProfile = useCallback(async () => {
+    if (user) {
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setUserId(data.userId || '');
+        setAvatarURL(data.avatarURL || '');
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      const docRef = doc(db, 'users', userId);
-      const docSnap = await getDoc(docRef);
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
-      if (docSnap.exists()) {
-        setProfileData(docSnap.data());
-      } else {
-        console.log('No such document!');
-      }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    let newAvatarURL = avatarURL;
 
-    fetchProfileData();
-  }, [userId]);
+    if (avatar) {
+      const avatarRef = ref(storage, `avatars/${user.uid}`);
+      await uploadBytes(avatarRef, avatar);
+      newAvatarURL = await getDownloadURL(avatarRef);
+    }
 
-  if (!profileData) {
-    return <div>Loading...</div>;
-  }
+    await setDoc(doc(db, 'users', user.uid), {
+      userId,
+      avatarURL: newAvatarURL
+    }, { merge: true });
+
+    await updateUserProfile({ userId, avatarURL: newAvatarURL });
+    alert('Profile updated successfully!');
+  };
+
+  const handleAvatarChange = (e) => {
+    if (e.target.files[0]) {
+      setAvatar(e.target.files[0]);
+    }
+  };
 
   return (
-    <ProfileContainer>
-      <ProfileHeader>
-        <Avatar src={profileData.avatarURL || '/default-avatar.png'} alt="User avatar" />
-        <h2>{profileData.userId}</h2>
-      </ProfileHeader>
-      <ProfileContent>
-        <p>Email: {profileData.email}</p>
-        {/* 他のプロフィール情報をここに追加 */}
-      </ProfileContent>
-    </ProfileContainer>
+    <div className="profile">
+      <h2>Profile</h2>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="userId">User ID:</label>
+          <input
+            type="text"
+            id="userId"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="avatar">Avatar:</label>
+          <input
+            type="file"
+            id="avatar"
+            onChange={handleAvatarChange}
+            accept="image/*"
+          />
+        </div>
+        {avatarURL && <img src={avatarURL} alt="Current avatar" width="100" />}
+        <button type="submit">Update Profile</button>
+      </form>
+    </div>
   );
 }
 

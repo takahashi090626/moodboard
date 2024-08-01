@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getUserProfile, getUserPosts, sendFriendRequest, checkFriendshipStatus } from '../services/userService';
-import PostList from '../components/Post/PostList';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../styles/StyledComponents';
+import { ProfileContainer, ProfileHeader, Avatar, ProfileContent, Button } from '../styles/StyledComponents';
+import PostList from '../components/Post/PostList';
 
 function UserProfile() {
   const { userId } = useParams();
@@ -11,31 +12,24 @@ function UserProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
-  const [friendshipStatus, setFriendshipStatus] = useState('none');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [friendStatus, setFriendStatus] = useState('none'); // 'none', 'pending', 'friends'
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (userId) {
         try {
-          setLoading(true);
-          setError(null);
-          const userProfile = await getUserProfile(userId);
-          if (!userProfile) {
-            setError('User not found');
-            return;
+          const userDoc = await getDoc(doc(db, 'users', userId));
+          if (userDoc.exists()) {
+            setProfile({ id: userDoc.id, ...userDoc.data() });
+          } else {
+            console.log('User not found');
+            navigate('/404');
           }
-          const userPosts = await getUserPosts(userId);
-          const status = await checkFriendshipStatus(user.uid, userId);
-          setProfile(userProfile);
-          setPosts(userPosts);
-          setFriendshipStatus(status);
+          // ここでポストの取得ロジックを実装
+          // フレンドステータスの確認ロジックを実装
+          await checkFriendStatus();
         } catch (error) {
           console.error('Error fetching user data:', error);
-          setError('Failed to load user profile');
-        } finally {
-          setLoading(false);
         }
       }
     };
@@ -43,51 +37,58 @@ function UserProfile() {
     fetchUserData();
   }, [userId, user.uid]);
 
-  const handleUserClick = (clickedUserId) => {
-    navigate(`/profile/${clickedUserId}`);
-  };
-
-  const handleFriendRequest = async () => {
-    try {
-      await sendFriendRequest(user.uid, userId);
-      setFriendshipStatus('pending');
-    } catch (error) {
-      console.error('Error sending friend request:', error);
-      setError('Failed to send friend request');
+  const checkFriendStatus = async () => {
+    if (user.uid === userId) {
+      setFriendStatus('self');
+      return;
+    }
+    const friendRequestDoc = await getDoc(doc(db, 'friendRequests', `${user.uid}_${userId}`));
+    if (friendRequestDoc.exists()) {
+      setFriendStatus(friendRequestDoc.data().status);
+    } else {
+      setFriendStatus('none');
     }
   };
 
-  if (loading) {
+  const handleFriendRequest = async () => {
+    if (friendStatus === 'none') {
+      await setDoc(doc(db, 'friendRequests', `${user.uid}_${userId}`), {
+        sender: user.uid,
+        receiver: userId,
+        status: 'pending',
+        timestamp: new Date()
+      });
+      setFriendStatus('pending');
+    } else if (friendStatus === 'pending') {
+      await deleteDoc(doc(db, 'friendRequests', `${user.uid}_${userId}`));
+      setFriendStatus('none');
+    }
+  };
+
+  if (!profile) {
     return <div>Loading...</div>;
   }
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (!profile) {
-    return <div>User not found</div>;
-  }
-
   return (
-    <div>
-      <h1>{profile.username}'s Profile</h1>
-      <img src={profile.avatarURL} alt={profile.username} />
-      {user.uid !== userId && (
-        <div>
-          {friendshipStatus === 'none' && (
-            <Button onClick={handleFriendRequest}>Send Friend Request</Button>
-          )}
-          {friendshipStatus === 'pending' && (
-            <Button disabled>Friend Request Pending</Button>
-          )}
-          {friendshipStatus === 'friends' && (
-            <Button disabled>Friends</Button>
-          )}
-        </div>
-      )}
-      <PostList posts={posts} onUserClick={handleUserClick} />
-    </div>
+    <ProfileContainer>
+      <ProfileHeader>
+        <Avatar src={profile.avatarURL || '/default-avatar.png'} alt="User avatar" />
+        <h2>{profile.user_id}</h2>
+      </ProfileHeader>
+      <ProfileContent>
+        {friendStatus === 'none' && (
+          <Button onClick={handleFriendRequest}>Send Friend Request</Button>
+        )}
+        {friendStatus === 'pending' && (
+          <Button onClick={handleFriendRequest}>Cancel Friend Request</Button>
+        )}
+        {friendStatus === 'friends' && (
+          <Button disabled>Friends</Button>
+        )}
+        {/* その他のプロフィール情報 */}
+      </ProfileContent>
+      <PostList posts={posts} onUserClick={(id) => navigate(`/profile/${id}`)} />
+    </ProfileContainer>
   );
 }
 
