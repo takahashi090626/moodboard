@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   collection,
   query,
@@ -23,17 +23,29 @@ import {
   PostContent,
   PostFooter,
   Avatar,
-  UserName,
   TimeStamp,
   EmotionIcon,
   Button,
   LikeCount
 } from '../../styles/StyledComponents';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import styled from 'styled-components';
 
-function PostList() {
-  const [posts, setPosts] = useState([]);
-  const { user } = useAuth();
+const UserLink = styled.span`
+  color: #1877f2;
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+function PostList({ posts: initialPosts, onUserClick }) {
+    const [posts, setPosts] = useState(initialPosts || []);
+    const { user } = useAuth();
+    const navigate = useNavigate();
 
   useEffect(() => {
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
@@ -102,13 +114,23 @@ function PostList() {
     return 'Unknown date';
   };
 
+  const handleUserClick = (userId) => {
+    if (onUserClick) {
+      onUserClick(userId);
+    } else {
+      navigate(`/profile/${userId}`);
+    }
+  };
+
   return (
     <div>
       {posts.map((post) => (
         <PostContainer key={post.id} emotion={post.emotion}>
           <PostHeader>
             <Avatar src={post.userAvatar || '/default-avatar.png'} alt="User avatar" />
-            <UserName>{post.userId}</UserName>
+            <UserLink onClick={() => handleUserClick(post.userId)}>
+              {post.userId}
+            </UserLink>
             <TimeStamp>{formatDate(post.createdAt)}</TimeStamp>
           </PostHeader>
           <PostContent>{post.content}</PostContent>

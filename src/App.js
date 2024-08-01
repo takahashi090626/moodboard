@@ -12,6 +12,7 @@ import Register from './components/Auth/Register';
 import PostDetail from './components/Post/PostDetail';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import SearchPage  from './pages/SearchPage';
+import UserProfile from './pages/Profile';
 
 function App() {
   const { user, loading } = useAuth();
@@ -32,6 +33,7 @@ function App() {
             <Route path="/explore" element={user ? <Explore /> : <Navigate to="/login" />} />
             <Route path="/notification" element={user ? <Notification /> : <Navigate to="/login" />} />
             <Route path="/search" element={user ? <SearchPage /> : <Navigate to="/login" />} />
+            <Route path="/profile/:userId" element={<UserProfile />} />
 
 
             <Route path="/login" element={<Login />} />

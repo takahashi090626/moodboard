@@ -147,5 +147,17 @@ export const CommentContainer = styled.div`
   padding: 15px;
   margin-top: 15px;
 `;
+// src/styles/StyledComponents.js に以下を追加
+export const ProfileContainer = styled.div`
+  /* スタイルを定義 */
+`;
+
+export const ProfileHeader = styled.div`
+  /* スタイルを定義 */
+`;
+
+export const ProfileContent = styled.div`
+  /* スタイルを定義 */
+`;
 
 // Add other styled components as needed
