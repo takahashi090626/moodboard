@@ -3,7 +3,7 @@ import PostForm from '../components/Post/PostForm';
 import PostList from '../components/Post/PostList';
 import styled from 'styled-components';
 import NotificationBox from '../components/NotificationBox';
-
+import { QueryClient, QueryClientProvider } from 'react-query';
 
 const HomeContainer = styled.div`
   max-width: 600px;
@@ -11,16 +11,18 @@ const HomeContainer = styled.div`
   padding: 20px;
 `;
 
-function Home() {
-   
-  return (
-    <div className="home">
-     <NotificationBox />
+const queryClient = new QueryClient();
 
-      <PostForm />
-      <PostList />
-    </div>
+function Home() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <HomeContainer>
+        <NotificationBox />
+        <PostForm />
+        <PostList />
+      </HomeContainer>
+    </QueryClientProvider>
   );
 }
 
-export default Home;    
+export default Home;
