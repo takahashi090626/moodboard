@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
+import { FaBell } from 'react-icons/fa';
+import { getNotifications } from '../../services/userService';
+import NotificationBox from '../NotificationBox';
 
 const HeaderWrapper = styled.header`
   background-color: rgba(0, 0, 0, 0.5);
@@ -68,9 +71,54 @@ const LogoutButton = styled.button`
   }
 `;
 
+const NotificationIcon = styled.div`
+  position: relative;
+  cursor: pointer;
+`;
+
+const NotificationCount = styled.span`
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #e94560;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+`;
+
+const NotificationPopup = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+`;
+
 function Header() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (user) {
+        const userNotifications = await getNotifications(user.uid);
+        setNotifications(userNotifications);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000); // 1分ごとに更新
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -81,6 +129,12 @@ function Header() {
     }
   };
 
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
   return (
     <HeaderWrapper>
       <Logo to="/">MoodBoard 2.0</Logo>
@@ -89,11 +143,18 @@ function Header() {
           <>
             <NavItem to="/">ホーム</NavItem>
             <NavItem to="/search">検索</NavItem>
-            
             <NavItem to="/friends">フレンド一覧</NavItem>
-            <NavItem to="/notification">お知らせ</NavItem>
+            <NotificationIcon onClick={toggleNotifications}>
+              <FaBell color="white" size={20} />
+              {unreadCount > 0 && <NotificationCount>{unreadCount}</NotificationCount>}
+            </NotificationIcon>
+            {showNotifications && (
+              <NotificationPopup>
+                <NotificationBox notifications={notifications} setNotifications={setNotifications} />
+              </NotificationPopup>
+            )}
             <Link to="/profile">
-              <UserAvatar src={user.avatarUrl || '/default-avatar.png'}  />
+              <UserAvatar src={user.avatarUrl || '/default-avatar.png'} />
             </Link>
             <LogoutButton onClick={handleLogout}>ログアウト</LogoutButton>
           </>

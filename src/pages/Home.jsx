@@ -17,7 +17,6 @@ function Home() {
   return (
     <QueryClientProvider client={queryClient}>
       <HomeContainer>
-        <NotificationBox />
         <PostForm />
         <PostList />
       </HomeContainer>

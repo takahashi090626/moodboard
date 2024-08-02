@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore';
 
 export const searchUsers = async (searchTerm) => {
   const usersRef = collection(db, 'users');
@@ -46,4 +46,48 @@ export const searchPostsByEmotion = async (emotion) => {
     console.error("Error searching posts by emotion:", error);
     throw error;
   }
+};
+
+export const getNotifications = async (userId) => {
+  const notificationsRef = collection(db, 'notifications');
+  const q = query(
+    notificationsRef,
+    where('receiverId', '==', userId),
+    where('isRead', '==', false),
+    orderBy('createdAt', 'desc'),
+    limit(20)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const markNotificationAsRead = async (notificationId) => {
+  const notificationRef = doc(db, 'notifications', notificationId);
+  await updateDoc(notificationRef, { isRead: true });
+};
+
+export const createNotification = async (type, senderId, receiverId, postId = null, content = null) => {
+  const notificationRef = collection(db, 'notifications');
+  await addDoc(notificationRef, {
+    type,
+    senderId,
+    receiverId,
+    postId,
+    content,
+    isRead: false,
+    createdAt: new Date()
+  });
+};
+
+export const searchPosts = async (searchTerm) => {
+  const postsRef = collection(db, 'posts');
+  const q = query(
+    postsRef,
+    where('content', '>=', searchTerm),
+    where('content', '<=', searchTerm + '\uf8ff'),
+    orderBy('content'),
+    limit(20)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };

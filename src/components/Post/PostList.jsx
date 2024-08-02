@@ -31,6 +31,8 @@ import {
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import styled from 'styled-components';
 import { useInfiniteQuery, useMutation, useQueryClient } from 'react-query';
+import { createNotification } from '../../services/userService';
+
 
 const UserLink = styled.span`
   color: #1877f2;
@@ -125,7 +127,7 @@ function PostList() {
   );
 
   const handleLike = useMutation(
-    async ({ postId, isLiked }) => {
+    async ({ postId, isLiked, postUserId }) => {
       const likeRef = doc(db, 'posts', postId, 'likes', user.uid);
       const postRef = doc(db, 'posts', postId);
 
@@ -135,6 +137,10 @@ function PostList() {
       } else {
         await setDoc(likeRef, { userId: user.uid });
         await updateDoc(postRef, { likeCount: increment(1) });
+        // 投稿者が自分でない場合にのみ通知を作成
+        if (postUserId !== user.uid) {
+          await createNotification('like', user.uid, postUserId, postId);
+        }
       }
     },
     {
@@ -212,13 +218,13 @@ function PostList() {
                     <Button onClick={() => handleDelete.mutate(post.id)}>Delete</Button>
                   </>
                 )}
-                <Button onClick={() => handleLike.mutate({ postId: post.id, isLiked: post.isLiked })}>
-                  {post.isLiked ? (
-                    <FaHeart color="red" size="1.5em" />
-                  ) : (
-                    <FaRegHeart color="gray" size="1.5em" />
-                  )}
-                </Button>
+                <Button onClick={() => handleLike.mutate({ postId: post.id, isLiked: post.isLiked, postUserId: post.userId })}>
+      {post.isLiked ? (
+        <FaHeart color="red" size="1.5em" />
+      ) : (
+        <FaRegHeart color="gray" size="1.5em" />
+      )}
+    </Button>
                 <LikeCount>{post.likeCount} likes</LikeCount>
                 <Link to={`/post/${post.id}`}>
                   <Button>💬 ({post.commentCount})</Button>
