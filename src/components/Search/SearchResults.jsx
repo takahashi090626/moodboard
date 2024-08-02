@@ -8,30 +8,22 @@ const ResultsContainer = styled.div`
 `;
 
 const ResultItem = styled.div`
-  background-color: #353a50;
+  background-color: ${props => props.emotion === '😊' ? '#4a5568' :
+                               props.emotion === '😠' ? '#742a2a' :
+                               props.emotion === '😲' ? '#2a4365' :
+                               props.emotion === '😨' ? '#22543d' :
+                               props.emotion === '❤️' ? '#702459' :
+                               props.emotion === '🤔' ? '#744210' : '#2d3748'};
   border-radius: 8px;
   margin-bottom: 16px;
   overflow: hidden;
+  padding: 16px;
 `;
 
 const PostHeader = styled.div`
-  padding: 12px 16px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #282c3e;
-`;
-
-const PostContent = styled.div`
-  padding: 16px;
-  color: #fff;
-`;
-
-const PostFooter = styled.div`
-  padding: 12px 16px;
-  border-top: 1px solid #282c3e;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-bottom: 12px;
 `;
 
 const Avatar = styled.img`
@@ -41,23 +33,33 @@ const Avatar = styled.img`
   margin-right: 12px;
 `;
 
+const UserInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
 const UserName = styled.span`
   font-weight: bold;
   color: #fff;
+  font-size: 16px;
 `;
 
-const UserLink = styled(Link)`
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  align-items: center;
+const PostTime = styled.span`
+  color: #a0aec0;
+  font-size: 14px;
 `;
 
-const PostText = styled.p`
-  margin: 0;
+const PostContent = styled.p`
+  color: #fff;
   font-size: 16px;
   line-height: 1.5;
-  color: #fff;
+  margin-bottom: 12px;
+`;
+
+const PostFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const EmotionIcon = styled.span`
@@ -68,8 +70,23 @@ const EmotionIcon = styled.span`
 const PostMeta = styled.div`
   display: flex;
   align-items: center;
-  color: #8e8e8e;
+  color: #a0aec0;
   font-size: 14px;
+`;
+
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: 8px;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 `;
 
 const Icon = styled.span`
@@ -79,9 +96,9 @@ const Icon = styled.span`
 const NoResults = styled.p`
   text-align: center;
   font-style: italic;
-  color: #8e8e8e;
+  color: #a0aec0;
   padding: 20px;
-  background-color: #353a50;
+  background-color: #2d3748;
   border-radius: 8px;
 `;
 
@@ -93,21 +110,22 @@ const SearchResults = ({ results }) => {
   return (
     <ResultsContainer>
       {results.map((result) => (
-        <ResultItem key={result.id}>
+        <ResultItem key={result.id} emotion={result.emotion}>
           <PostHeader>
-            <UserLink to={`/profile/${result.userId}`}>
-              <Avatar src={result.userAvatar || '/default-avatar.png'} alt={result.username} />
+            <Avatar src={result.userAvatar || '/default-avatar.png'} alt={result.username} />
+            <UserInfo>
               <UserName>{result.username}</UserName>
-            </UserLink>
+              <PostTime>{new Date(result.createdAt).toLocaleString()}</PostTime>
+            </UserInfo>
           </PostHeader>
-          <PostContent>
-            <PostText>{result.content}</PostText>
-          </PostContent>
+          <PostContent>{result.content}</PostContent>
           <PostFooter>
             <EmotionIcon>{result.emotion}</EmotionIcon>
             <PostMeta>
               <Icon><FaHeart /></Icon> {result.likeCount || 0}
               <Icon style={{ marginLeft: '12px' }}><FaComment /></Icon> {result.commentCount || 0}
+              <ActionButton><FaHeart color={result.isLiked ? 'red' : '#a0aec0'} /></ActionButton>
+              <ActionButton><FaComment /></ActionButton>
             </PostMeta>
           </PostFooter>
         </ResultItem>

@@ -17,37 +17,99 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import {
-  PostContainer,
-  PostHeader,
-  PostContent,
-  PostFooter,
-  Avatar,
-  TimeStamp,
-  EmotionIcon,
-  Button,
-  LikeCount
-} from '../../styles/StyledComponents';
-import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import styled from 'styled-components';
 import { useInfiniteQuery, useMutation, useQueryClient } from 'react-query';
 import { createNotification } from '../../services/userService';
+import { FaHeart, FaRegHeart, FaComment, FaEdit, FaTrash } from 'react-icons/fa';
 
+const PostContainer = styled.div`
+  background-color: #2d3748;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+`;
+
+const PostHeader = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const Avatar = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+`;
+
+const UserInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
 
 const UserLink = styled.span`
-  color: #1877f2;
-  text-decoration: none;
+  color: #fff;
   font-weight: bold;
   cursor: pointer;
-
   &:hover {
     text-decoration: underline;
   }
 `;
 
+const TimeStamp = styled.span`
+  color: #a0aec0;
+  font-size: 12px;
+`;
+
+const PostContent = styled.p`
+  color: #fff;
+  margin-bottom: 12px;
+`;
+
+const PostFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const EmotionIcon = styled.span`
+  font-size: 24px;
+  margin-right: 8px;
+`;
+
+
+
+const ActionIcon = styled.span`
+  margin-right: 4px;
+`;
+
+const ActionCount = styled.span`
+  margin-left: 4px;
+`;
+
 const LoadingSpinner = styled.div`
   text-align: center;
   margin: 20px 0;
+  color: #fff;
+`;
+
+const ActionsContainer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  &:hover {
+    color: #fff;
+  }
 `;
 
 function PostList() {
@@ -110,7 +172,7 @@ function PostList() {
     isError,
     error
   } = useInfiniteQuery('posts', fetchPosts, {
-    getNextPageParam: (lastPage) => lastPage.lastVisible || undefined,
+    getNextPageParam: (lastPage) => lastPage?.lastVisible || undefined,
   });
 
   const handleDelete = useMutation(
@@ -137,7 +199,6 @@ function PostList() {
       } else {
         await setDoc(likeRef, { userId: user.uid });
         await updateDoc(postRef, { likeCount: increment(1) });
-        // 投稿者が自分でない場合にのみ通知を作成
         if (postUserId !== user.uid) {
           await createNotification('like', user.uid, postUserId, postId);
         }
@@ -187,7 +248,7 @@ function PostList() {
   }, [handleObserver]);
 
   if (isLoading) {
-    return <div>Loading posts...</div>;
+    return <LoadingSpinner>Loading posts...</LoadingSpinner>;
   }
 
   if (isError) {
@@ -199,36 +260,39 @@ function PostList() {
       {data?.pages.map((page, i) => (
         <React.Fragment key={i}>
           {page.posts.map((post) => (
-            <PostContainer key={post.id} emotion={post.emotion}>
+            <PostContainer key={post.id}>
               <PostHeader>
                 <Avatar src={post.userAvatar || '/default-avatar.png'} alt="User avatar" />
-                <UserLink onClick={() => handleUserClick(post.userId)}>
-                  {post.username}
-                </UserLink>
-                <TimeStamp>{formatDate(post.createdAt)}</TimeStamp>
+                <UserInfo>
+                  <UserLink onClick={() => handleUserClick(post.userId)}>
+                    {post.username}
+                  </UserLink>
+                  <TimeStamp>{formatDate(post.createdAt)}</TimeStamp>
+                </UserInfo>
               </PostHeader>
               <PostContent>{post.content}</PostContent>
               <PostFooter>
-                <EmotionIcon>{post.emotion}</EmotionIcon>
+                <ActionsContainer>
+                  <EmotionIcon>{post.emotion}</EmotionIcon>
+                  <ActionButton onClick={() => handleLike.mutate({ postId: post.id, isLiked: post.isLiked, postUserId: post.userId })}>
+                    {post.isLiked ? <FaHeart color="red" /> : <FaRegHeart />}
+                    <ActionCount>{post.likeCount}</ActionCount>
+                  </ActionButton>
+                  <ActionButton as={Link} to={`/post/${post.id}`}>
+                    <FaComment />
+                    <ActionCount>{post.commentCount}</ActionCount>
+                  </ActionButton>
+                </ActionsContainer>
                 {user.uid === post.userId && (
-                  <>
-                    <Link to={`/post/edit/${post.id}`}>
-                      <Button>Edit</Button>
-                    </Link>
-                    <Button onClick={() => handleDelete.mutate(post.id)}>Delete</Button>
-                  </>
+                  <ActionsContainer>
+                    <ActionButton as={Link} to={`/post/edit/${post.id}`}>
+                      <FaEdit />
+                    </ActionButton>
+                    <ActionButton onClick={() => handleDelete.mutate(post.id)}>
+                      <FaTrash />
+                    </ActionButton>
+                  </ActionsContainer>
                 )}
-                <Button onClick={() => handleLike.mutate({ postId: post.id, isLiked: post.isLiked, postUserId: post.userId })}>
-      {post.isLiked ? (
-        <FaHeart color="red" size="1.5em" />
-      ) : (
-        <FaRegHeart color="gray" size="1.5em" />
-      )}
-    </Button>
-                <LikeCount>{post.likeCount} likes</LikeCount>
-                <Link to={`/post/${post.id}`}>
-                  <Button>💬 ({post.commentCount})</Button>
-                </Link>
               </PostFooter>
             </PostContainer>
           ))}
