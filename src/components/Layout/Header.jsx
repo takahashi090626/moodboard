@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
-import { auth } from '../../firebase';
+import { auth, db } from '../../firebase';
 import { FaBell } from 'react-icons/fa';
 import { getNotifications } from '../../services/userService';
 import NotificationBox from '../NotificationBox';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const HeaderWrapper = styled.header`
   background-color: rgba(0, 0, 0, 0.5);
@@ -100,24 +101,71 @@ const NotificationPopup = styled.div`
   z-index: 1000;
 `;
 
+
 function Header() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('/default-avatar.png');
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      if (user) {
-        const userNotifications = await getNotifications(user.uid);
-        setNotifications(userNotifications);
+    let unsubscribe;
+
+    const fetchUserData = async () => {
+      if (user && user.uid) {
+        // Firestoreからユーザーデータを取得し、リアルタイムで更新を監視
+        const userDocRef = doc(db, 'users', user.uid);
+        unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = docSnapshot.data();
+            if (userData.avatarURL) {
+              setAvatarUrl(userData.avatarURL);
+            } else if (user.photoURL) {
+              setAvatarUrl(user.photoURL);
+            } else {
+              setAvatarUrl('/default-avatar.png');
+            }
+          } else {
+            setAvatarUrl('/default-avatar.png');
+          }
+        }, (error) => {
+          console.error("Error fetching user data:", error);
+          setAvatarUrl('/default-avatar.png');
+        });
+
+        // 通知の取得
+        try {
+          const userNotifications = await getNotifications(user.uid);
+          setNotifications(userNotifications);
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
+          setNotifications([]);
+        }
+      } else {
+        setAvatarUrl('/default-avatar.png');
       }
     };
 
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000); // 1分ごとに更新
+    fetchUserData();
 
-    return () => clearInterval(interval);
+    const notificationInterval = setInterval(() => {
+      if (user && user.uid) {
+        getNotifications(user.uid)
+          .then(setNotifications)
+          .catch(error => {
+            console.error('Error fetching notifications:', error);
+            setNotifications([]);
+          });
+      }
+    }, 60000); // 1分ごとに更新
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+      clearInterval(notificationInterval);
+    };
   }, [user]);
 
   const handleLogout = async () => {
@@ -154,7 +202,7 @@ function Header() {
               </NotificationPopup>
             )}
             <Link to="/profile">
-              <UserAvatar src={user.avatarUrl || '/default-avatar.png'} />
+              <UserAvatar src={avatarUrl} alt="User avatar" onError={(e) => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }} />
             </Link>
             <LogoutButton onClick={handleLogout}>ログアウト</LogoutButton>
           </>
