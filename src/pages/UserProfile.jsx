@@ -3,8 +3,76 @@ import { useParams } from 'react-router-dom';
 import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { ProfileContainer, ProfileHeader, Avatar, ProfileContent, Button } from '../styles/StyledComponents';
 import UserPostList from '../components/Post/UserPostList';
+import styled, { keyframes } from 'styled-components';
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const ProfileContainer = styled.div`
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+`;
+
+const ProfileCard = styled.div`
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-bottom: 30px;
+  animation: ${fadeIn} 0.5s ease-in;
+  color: #000000;
+`;
+
+const ProfileHeader = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const Avatar = styled.img`
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 20px;
+`;
+
+const ProfileInfo = styled.div`
+  flex-grow: 1;
+`;
+
+const Username = styled.h2`
+  margin: 0;
+  color: #000000;
+`;
+
+const ProfileContent = styled.div`
+  margin-top: 20px;
+`;
+
+const StyledButton = styled.button`
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #357ae8;
+  }
+`;
+
+const FriendStatus = styled.p`
+  color: #4caf50;
+  font-weight: bold;
+  margin-top: 10px;
+`;
 
 function UserProfile() {
   const { userId } = useParams();
@@ -84,28 +152,30 @@ function UserProfile() {
 
   return (
     <ProfileContainer>
-      <ProfileHeader>
-        <Avatar src={profile.avatarURL || '/default-avatar.png'} alt="User avatar" />
-        <h2>{profile.userId}</h2>
-      </ProfileHeader>
-      <ProfileContent>
-        {user.uid !== userId && (
-          <>
-            {friendStatus === 'none' && (
-              <Button onClick={handleFriendRequest}>Send Friend Request</Button>
-            )}
-            {friendStatus === 'pending' && (
-              <Button onClick={handleFriendRequest}>Cancel Friend Request</Button>
-            )}
-            {friendStatus === 'friends' && (
-              <div>
-                <p style={{ color: 'green', fontWeight: 'bold' }}>We are friends!!</p>
-              </div>
-            )}
-          </>
-        )}
-        {/* その他のプロフィール情報をここに追加 */}
-      </ProfileContent>
+      <ProfileCard>
+        <ProfileHeader>
+          <Avatar src={profile.avatarURL || '/default-avatar.png'} alt="User avatar" />
+          <ProfileInfo>
+            <Username>{profile.userId}</Username>
+            {profile.bio && <p>{profile.bio}</p>}
+          </ProfileInfo>
+        </ProfileHeader>
+        <ProfileContent>
+          {user.uid !== userId && (
+            <>
+              {friendStatus === 'none' && (
+                <StyledButton onClick={handleFriendRequest}>Send Friend Request</StyledButton>
+              )}
+              {friendStatus === 'pending' && (
+                <StyledButton onClick={handleFriendRequest}>Cancel Friend Request</StyledButton>
+              )}
+              {friendStatus === 'friends' && (
+                <FriendStatus>We are friends!!</FriendStatus>
+              )}
+            </>
+          )}
+        </ProfileContent>
+      </ProfileCard>
       <h3>{profile.userId}'s Posts</h3>
       <UserPostList posts={posts} />
     </ProfileContainer>
