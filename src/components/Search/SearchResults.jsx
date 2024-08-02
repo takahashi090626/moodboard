@@ -1,37 +1,88 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { FaHeart, FaComment } from 'react-icons/fa';
 
 const ResultsContainer = styled.div`
   margin-top: 20px;
 `;
 
 const ResultItem = styled.div`
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+  background-color: #353a50;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+`;
+
+const PostHeader = styled.div`
+  padding: 12px 16px;
   display: flex;
+  align-items: center;
+  border-bottom: 1px solid #282c3e;
+`;
+
+const PostContent = styled.div`
+  padding: 16px;
+  color: #fff;
+`;
+
+const PostFooter = styled.div`
+  padding: 12px 16px;
+  border-top: 1px solid #282c3e;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 `;
 
 const Avatar = styled.img`
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  margin-right: 10px;
+  margin-right: 12px;
 `;
 
 const UserName = styled.span`
   font-weight: bold;
+  color: #fff;
 `;
 
-const PostContent = styled.p`
-  margin: 5px 0;
+const UserLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+`;
+
+const PostText = styled.p`
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #fff;
+`;
+
+const EmotionIcon = styled.span`
+  font-size: 24px;
+  margin-right: 8px;
+`;
+
+const PostMeta = styled.div`
+  display: flex;
+  align-items: center;
+  color: #8e8e8e;
+  font-size: 14px;
+`;
+
+const Icon = styled.span`
+  margin-right: 4px;
 `;
 
 const NoResults = styled.p`
   text-align: center;
   font-style: italic;
-  color: #666;
+  color: #8e8e8e;
+  padding: 20px;
+  background-color: #353a50;
+  border-radius: 8px;
 `;
 
 const SearchResults = ({ results }) => {
@@ -43,20 +94,22 @@ const SearchResults = ({ results }) => {
     <ResultsContainer>
       {results.map((result) => (
         <ResultItem key={result.id}>
-          {result.type === 'user' ? (
-            <Link to={`/profile/${result.id}`}>
-              <Avatar src={result.avatarUrl} alt={result.username} />
+          <PostHeader>
+            <UserLink to={`/profile/${result.userId}`}>
+              <Avatar src={result.userAvatar || '/default-avatar.png'} alt={result.username} />
               <UserName>{result.username}</UserName>
-            </Link>
-          ) : (
-            <>
-                <Avatar src={result.userAvatar || '/default-avatar.png'} alt="User avatar" />              <div>
-                <UserName>{result.user.username}</UserName>
-                <PostContent>{result.content}</PostContent>
-                <span>{result.emotion}</span>
-              </div>
-            </>
-          )}
+            </UserLink>
+          </PostHeader>
+          <PostContent>
+            <PostText>{result.content}</PostText>
+          </PostContent>
+          <PostFooter>
+            <EmotionIcon>{result.emotion}</EmotionIcon>
+            <PostMeta>
+              <Icon><FaHeart /></Icon> {result.likeCount || 0}
+              <Icon style={{ marginLeft: '12px' }}><FaComment /></Icon> {result.commentCount || 0}
+            </PostMeta>
+          </PostFooter>
         </ResultItem>
       ))}
     </ResultsContainer>
