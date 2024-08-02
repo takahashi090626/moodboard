@@ -1,18 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
   doc,
   deleteDoc,
   setDoc,
   updateDoc,
   increment,
-  getDoc,
-  getDocs,
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -42,47 +35,9 @@ const UserLink = styled.span`
   }
 `;
 
-function PostList() {
-  const [posts, setPosts] = useState([]);
+function UserPostList({ posts = [] }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
-    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
-      const postsData = [];
-      const userPromises = [];
-      const likePromises = [];
-      const commentPromises = [];
-
-      querySnapshot.forEach((postDoc) => {
-        const postData = { id: postDoc.id, ...postDoc.data() };
-        postsData.push(postData);
-        userPromises.push(getDoc(doc(db, 'users', postData.userId)));
-        likePromises.push(getDoc(doc(db, 'posts', postDoc.id, 'likes', user.uid)));
-        commentPromises.push(getDocs(collection(db, 'posts', postDoc.id, 'comments')));
-      });
-
-      const [userDocs, likeDocs, commentDocs] = await Promise.all([
-        Promise.all(userPromises),
-        Promise.all(likePromises),
-        Promise.all(commentPromises)
-      ]);
-
-      postsData.forEach((post, index) => {
-        const userData = userDocs[index].data();
-        post.userAvatar = userData?.avatarURL || '';
-        post.username = userData?.userId || 'Anonymous';
-        post.isLiked = likeDocs[index].exists();
-        post.likeCount = post.likeCount || 0;
-        post.commentCount = commentDocs[index].size;
-      });
-
-      setPosts(postsData);
-    });
-
-    return () => unsubscribe();
-  }, [user.uid]);
 
   const handleDelete = async (postId) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
@@ -117,6 +72,10 @@ function PostList() {
   const handleUserClick = (userId) => {
     navigate(`/user-profile/${userId}`);
   };
+
+  if (posts.length === 0) {
+    return <p>No posts to display.</p>;
+  }
 
   return (
     <div>
@@ -158,4 +117,4 @@ function PostList() {
   );
 }
 
-export default PostList;
+export default UserPostList;

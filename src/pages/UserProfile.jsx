@@ -4,7 +4,7 @@ import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } fro
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfileContainer, ProfileHeader, Avatar, ProfileContent, Button } from '../styles/StyledComponents';
-import PostList from '../components/Post/PostList';
+import UserPostList from '../components/Post/UserPostList';
 
 function UserProfile() {
   const { userId } = useParams();
@@ -13,18 +13,18 @@ function UserProfile() {
   const [posts, setPosts] = useState([]);
   const [friendStatus, setFriendStatus] = useState('none');
 
-  const fetchUserPosts = useCallback(async () => {
-    const postsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
-    const querySnapshot = await getDocs(postsQuery);
-    const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setPosts(userPosts);
-  }, [userId]);
-
   const checkFriendStatus = useCallback(async () => {
     if (user.uid === userId) {
       setFriendStatus('self');
       return;
     }
+    
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists() && userDoc.data().friends && userDoc.data().friends.includes(userId)) {
+      setFriendStatus('friends');
+      return;
+    }
+
     const friendRequestDoc = await getDoc(doc(db, 'friendRequests', `${user.uid}_${userId}`));
     if (friendRequestDoc.exists()) {
       setFriendStatus(friendRequestDoc.data().status);
@@ -42,9 +42,15 @@ function UserProfile() {
             setProfile({ id: userDoc.id, ...userDoc.data() });
           } else {
             console.log('User not found');
-            // ここでエラー処理やリダイレクトを行うことができます
           }
           
+          const fetchUserPosts = async () => {
+            const postsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
+            const querySnapshot = await getDocs(postsQuery);
+            const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setPosts(userPosts);
+          };
+
           await fetchUserPosts();
           await checkFriendStatus();
         } catch (error) {
@@ -54,7 +60,7 @@ function UserProfile() {
     };
 
     fetchUserData();
-  }, [userId, fetchUserPosts, checkFriendStatus]);
+  }, [userId, checkFriendStatus]);
 
   const handleFriendRequest = async () => {
     if (friendStatus === 'none') {
@@ -92,14 +98,16 @@ function UserProfile() {
               <Button onClick={handleFriendRequest}>Cancel Friend Request</Button>
             )}
             {friendStatus === 'friends' && (
-              <Button disabled>Friends</Button>
+              <div>
+                <p style={{ color: 'green', fontWeight: 'bold' }}>We are friends!!</p>
+              </div>
             )}
           </>
         )}
         {/* その他のプロフィール情報をここに追加 */}
       </ProfileContent>
-      <h3>User Posts</h3>
-      <PostList posts={posts} />
+      <h3>{profile.userId}'s Posts</h3>
+      <UserPostList posts={posts} />
     </ProfileContainer>
   );
 }
